@@ -1,0 +1,119 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:stuff_app/entities/nutrition/nutrition_entity.dart';
+import 'package:stuff_app/entities/user/user_entity.dart';
+import 'package:stuff_app/states/user_state.dart';
+import 'package:stuff_app/widgets/texts/snack_bar_text.dart';
+
+class FBStore {
+  // USER
+  Future<UserEntity> getUser(BuildContext context, String id, UserState userState) async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    try {
+      DocumentSnapshot doc = await firestore.collection('users').doc(id).get();
+
+      if (doc.exists) {
+        UserEntity userEntity = UserEntity.fromMap(doc.data() as Map<String, dynamic>);
+
+        userState.setUserEntity(newUserEntity: userEntity);
+
+        return userEntity;
+      } else {
+        UserEntity userEntity = UserEntity(
+          id: id,
+          name: 'username',
+          bio: 'Add your bio',
+          weight: 50.0,
+          height: 1.65,
+          targetCalories: 2000.0,
+        );
+
+        try {
+          await firestore.collection('users').doc(id).set(userEntity.toMap());
+
+          userState.setUserEntity(newUserEntity: userEntity);
+
+          return userEntity;
+        } catch (e) {
+          context.mounted
+              ? SnackBarText().showBanner(msg: e.toString(), context: context)
+              : debugPrint(e.toString());
+        }
+      }
+    } catch (e) {
+      context.mounted
+          ? SnackBarText().showBanner(msg: e.toString(), context: context)
+          : debugPrint(e.toString());
+    }
+
+    return UserEntity(
+      id: 'NOID',
+      name: 'NONAME',
+      bio: 'NOBIO',
+      weight: 50.0,
+      height: 1.65,
+      targetCalories: 2000.0,
+    );
+  }
+
+  Future<void> updateUserEntity(BuildContext context, UserEntity userEntity) async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    try {
+      await firestore.collection('users').doc(userEntity.id).update(userEntity.toMap());
+    } catch (e) {
+      context.mounted
+          ? SnackBarText().showBanner(msg: e.toString(), context: context)
+          : debugPrint('Error updating user data: $e');
+      rethrow; // Re-throw the error to be caught in the UI
+    }
+  }
+
+  // MEALS
+  Future<void> addMeal(BuildContext context, NutritionEntity nutritionEntity, String uid) async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    try {
+      String id = firestore.collection('users').doc(uid).collection('meals').doc().id;
+      nutritionEntity.id = id;
+
+      await firestore
+          .collection('users')
+          .doc(uid)
+          .collection('meals')
+          .doc(id)
+          .set(nutritionEntity.toMap());
+    } catch (e) {
+      context.mounted
+          ? SnackBarText().showBanner(msg: e.toString(), context: context)
+          : debugPrint(e.toString());
+    }
+  }
+
+  Future<void> deleteMeal(BuildContext context, String uid, String mealId) async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    try {
+      // Construct the document path for the specific meal
+      DocumentReference mealRef = firestore
+          .collection('users')
+          .doc(uid)
+          .collection('meals')
+          .doc(mealId);
+
+      // Delete the document
+      await mealRef.delete();
+
+      // Optionally, show a success message
+      if (context.mounted) {
+        SnackBarText().showBanner(msg: 'Meal deleted successfully', context: context);
+      }
+    } catch (e) {
+      // Handle any errors during deletion
+      debugPrint('Error deleting meal $mealId: $e');
+      if (context.mounted) {
+        SnackBarText().showBanner(msg: 'Failed to delete meal: ${e.toString()}', context: context);
+      }
+    }
+  }
+}
