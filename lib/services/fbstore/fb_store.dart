@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:stuff_app/entities/finance/transaction_entity.dart';
 import 'package:stuff_app/entities/nutrition/nutrition_entity.dart';
 import 'package:stuff_app/entities/user/user_entity.dart';
 import 'package:stuff_app/states/user_state.dart';
@@ -113,6 +114,56 @@ class FBStore {
       debugPrint('Error deleting meal $mealId: $e');
       if (context.mounted) {
         SnackBarText().showBanner(msg: 'Failed to delete meal: ${e.toString()}', context: context);
+      }
+    }
+  }
+
+  Future<void> addTransaction(
+    BuildContext context,
+    TransactionEntity transactionEntity,
+    String uid,
+  ) async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    try {
+      String id = firestore.collection('users').doc(uid).collection('transactions').doc().id;
+      transactionEntity.id = id; // Assign generated ID
+
+      await firestore
+          .collection('users')
+          .doc(uid)
+          .collection('transactions')
+          .doc(id)
+          .set(transactionEntity.toMap());
+    } catch (e) {
+      context.mounted
+          ? SnackBarText().showBanner(msg: e.toString(), context: context)
+          : debugPrint(e.toString());
+    }
+  }
+
+  Future<void> deleteTransaction(BuildContext context, String uid, String transactionId) async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    try {
+      DocumentReference transactionRef = firestore
+          .collection('users')
+          .doc(uid)
+          .collection('transactions')
+          .doc(transactionId);
+
+      await transactionRef.delete();
+
+      if (context.mounted) {
+        SnackBarText().showBanner(msg: 'Transaction deleted successfully', context: context);
+      }
+    } catch (e) {
+      debugPrint('Error deleting transaction $transactionId: $e');
+      if (context.mounted) {
+        SnackBarText().showBanner(
+          msg: 'Failed to delete transaction: ${e.toString()}',
+          context: context,
+        );
       }
     }
   }
