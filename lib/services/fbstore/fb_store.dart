@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:stuff_app/entities/finance/balance_entity.dart';
 import 'package:stuff_app/entities/finance/transaction_entity.dart';
 import 'package:stuff_app/entities/nutrition/nutrition_entity.dart';
 import 'package:stuff_app/entities/user/user_entity.dart';
@@ -28,6 +29,8 @@ class FBStore {
           weight: 50.0,
           height: 1.65,
           targetCalories: 2000.0,
+          storageAllowance: 209715200.0,
+          storageUsed: 0.0,
         );
 
         try {
@@ -55,6 +58,8 @@ class FBStore {
       weight: 50.0,
       height: 1.65,
       targetCalories: 2000.0,
+      storageAllowance: 209715200.0,
+      storageUsed: 0.0,
     );
   }
 
@@ -121,20 +126,33 @@ class FBStore {
   Future<void> addTransaction(
     BuildContext context,
     TransactionEntity transactionEntity,
+    BalanceEntity balanceEntity,
     String uid,
   ) async {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
+    final batch = firestore.batch();
 
     try {
       String id = firestore.collection('users').doc(uid).collection('transactions').doc().id;
       transactionEntity.id = id; // Assign generated ID
 
-      await firestore
-          .collection('users')
-          .doc(uid)
-          .collection('transactions')
-          .doc(id)
-          .set(transactionEntity.toMap());
+      if (transactionEntity.type == 'expense') {
+        balanceEntity.amount -= transactionEntity.amount;
+      } else {
+        balanceEntity.amount += transactionEntity.amount;
+      }
+
+      batch.set(
+        firestore.collection('users').doc(uid).collection('transactions').doc(id),
+        transactionEntity.toMap(),
+      );
+
+      batch.update(
+        firestore.collection('users').doc(uid).collection('balance').doc('balance'),
+        balanceEntity.toMap(),
+      );
+
+      await batch.commit();
     } catch (e) {
       context.mounted
           ? SnackBarText().showBanner(msg: e.toString(), context: context)
@@ -142,8 +160,14 @@ class FBStore {
     }
   }
 
-  Future<void> deleteTransaction(BuildContext context, String uid, String transactionId) async {
+  Future<void> deleteTransaction(
+    BuildContext context,
+    String uid,
+    String transactionId,
+    BalanceEntity balanceEntity,
+  ) async {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
+    final batch = firestore.batch();
 
     try {
       DocumentReference transactionRef = firestore
@@ -152,7 +176,23 @@ class FBStore {
           .collection('transactions')
           .doc(transactionId);
 
-      await transactionRef.delete();
+      DocumentSnapshot transaction = await transactionRef.get();
+      TransactionEntity transactionEntity = TransactionEntity.fromMap(
+        transaction.data() as Map<String, dynamic>,
+      );
+      if (transactionEntity.type == 'expense') {
+        balanceEntity.amount += transactionEntity.amount;
+      } else {
+        balanceEntity.amount -= transactionEntity.amount;
+      }
+
+      batch.delete(transactionRef);
+      batch.update(
+        firestore.collection('users').doc(uid).collection('balance').doc('balance'),
+        balanceEntity.toMap(),
+      );
+
+      await batch.commit();
 
       if (context.mounted) {
         SnackBarText().showBanner(msg: 'Transaction deleted successfully', context: context);
@@ -166,5 +206,55 @@ class FBStore {
         );
       }
     }
+  }
+
+  Future<BalanceEntity> getBalance(BuildContext context, String uid) async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    try {
+      DocumentSnapshot doc =
+          await firestore.collection('users').doc(uid).collection('balance').doc('balance').get();
+
+      if (doc.exists) {
+        return BalanceEntity.fromMap(doc.data() as Map<String, dynamic>);
+      } else {
+        QuerySnapshot<Map<String, dynamic>> snapshot =
+            await firestore.collection('users').doc(uid).collection('transactions').get();
+
+        double totalIncome = 0;
+        double totalExpenses = 0;
+        if (snapshot.size != 0) {
+          for (final doc in snapshot.docs) {
+            final transactionData = doc.data();
+            final transactionEntity = TransactionEntity.fromMap(transactionData);
+
+            if (transactionEntity.type == 'income') {
+              totalIncome += transactionEntity.amount;
+            } else {
+              totalExpenses += transactionEntity.amount;
+            }
+          }
+        }
+
+        final double netBalance = totalIncome - totalExpenses;
+
+        BalanceEntity balanceEntity = BalanceEntity(id: 'balance', amount: netBalance);
+
+        await firestore
+            .collection('users')
+            .doc(uid)
+            .collection('balance')
+            .doc('balance')
+            .set(balanceEntity.toMap());
+
+        return balanceEntity;
+      }
+    } catch (e) {
+      if (context.mounted) {
+        SnackBarText().showBanner(msg: 'Failed to get balance: ${e.toString()}', context: context);
+      }
+    }
+
+    return BalanceEntity(id: 'balance', amount: 0.0);
   }
 }

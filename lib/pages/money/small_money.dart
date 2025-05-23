@@ -4,11 +4,13 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:stuff_app/entities/finance/balance_entity.dart';
 import 'package:stuff_app/entities/finance/transaction_entity.dart';
 import 'package:stuff_app/pages/money/add_transaction.dart';
 import 'package:stuff_app/pages/money/balance_line_chart.dart';
 import 'package:stuff_app/pages/money/expandable_transaction.dart';
 import 'package:stuff_app/pages/money/expense_pie_chart.dart';
+import 'package:stuff_app/services/fbstore/fb_store.dart';
 import 'package:stuff_app/widgets/loading/loading_widget_large.dart';
 import 'package:stuff_app/widgets/ui_color.dart';
 
@@ -123,6 +125,8 @@ class _SmallMoneyPageState extends State<SmallMoneyPage> {
       ),
     );
   }
+
+  BalanceEntity balanceEntity = BalanceEntity(id: "noid", amount: 0.0);
 
   @override
   Widget build(BuildContext context) {
@@ -315,174 +319,233 @@ class _SmallMoneyPageState extends State<SmallMoneyPage> {
                   }
                 }
 
-                return Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                      child: Table(
-                        columnWidths: const <int, TableColumnWidth>{
-                          1: IntrinsicColumnWidth(), // Width based on Label content
-                          2: FlexColumnWidth(), // Value takes remaining space
-                        },
-                        defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                        children: <TableRow>[
-                          // --- Income Row ---
-                          TableRow(
-                            children: <Widget>[
-                              // Label Cell
-                              Padding(
-                                padding: const EdgeInsets.only(
-                                  right: 16.0,
-                                  top: 4.0,
-                                  bottom: 4.0,
-                                ), // Space between label and value
-                                child: Text(
-                                  'Total Income:',
-                                  style:
-                                      Theme.of(context)
+                return FutureBuilder(
+                  future: FBStore().getBalance(context, FirebaseAuth.instance.currentUser!.uid),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) {
+                      return const LoadingWidgetLarge();
+                    }
+
+                    balanceEntity = snapshot.data!;
+
+                    return Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                          child: Table(
+                            columnWidths: const <int, TableColumnWidth>{
+                              1: IntrinsicColumnWidth(), // Width based on Label content
+                              2: FlexColumnWidth(), // Value takes remaining space
+                            },
+                            defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                            children: <TableRow>[
+                              // --- Balance ---
+                              TableRow(
+                                children: <Widget>[
+                                  // Label Cell
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                      right: 16.0,
+                                      top: 4.0,
+                                      bottom: 4.0,
+                                    ), // Space between label and value
+                                    child: Text(
+                                      'Balance:',
+                                      style:
+                                          Theme.of(context)
+                                              .textTheme
+                                              .displayMedium, // Use a slightly smaller style for table rows if needed
+                                      textAlign: TextAlign.left,
+                                    ),
+                                  ),
+                                  // Value Cell
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 4.0),
+                                    child: Text(
+                                      '\$${balanceEntity.amount.toStringAsFixed(2)}',
+                                      style: Theme.of(context)
                                           .textTheme
-                                          .displayMedium, // Use a slightly smaller style for table rows if needed
-                                  textAlign: TextAlign.left,
-                                ),
+                                          .displayMedium // Match label style or keep displayMedium if preferred
+                                          ?.copyWith(color: UIColor().springGreen), // Apply color
+                                      textAlign: TextAlign.right, // Right-align currency values
+                                    ),
+                                  ),
+                                ],
                               ),
-                              // Value Cell
-                              Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 4.0),
-                                child: Text(
-                                  '\$${totalIncome.toStringAsFixed(2)}',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .displayMedium // Match label style or keep displayMedium if preferred
-                                      ?.copyWith(color: UIColor().springGreen), // Apply color
-                                  textAlign: TextAlign.right, // Right-align currency values
-                                ),
+                              // --- Income Row ---
+                              TableRow(
+                                children: <Widget>[
+                                  // Label Cell
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                      right: 16.0,
+                                      top: 4.0,
+                                      bottom: 4.0,
+                                    ), // Space between label and value
+                                    child: Text(
+                                      '$_filterType Income:',
+                                      style:
+                                          Theme.of(context)
+                                              .textTheme
+                                              .displayMedium, // Use a slightly smaller style for table rows if needed
+                                      textAlign: TextAlign.left,
+                                    ),
+                                  ),
+                                  // Value Cell
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 4.0),
+                                    child: Text(
+                                      '\$${totalIncome.toStringAsFixed(2)}',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .displayMedium // Match label style or keep displayMedium if preferred
+                                          ?.copyWith(color: UIColor().springGreen), // Apply color
+                                      textAlign: TextAlign.right, // Right-align currency values
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              // --- Expenses Row ---
+                              TableRow(
+                                children: <Widget>[
+                                  // Label Cell
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                      right: 16.0,
+                                      top: 4.0,
+                                      bottom: 4.0,
+                                    ),
+                                    child: Text(
+                                      '$_filterType Expenses:',
+                                      style: Theme.of(context).textTheme.displayMedium,
+                                      textAlign: TextAlign.left,
+                                    ),
+                                  ),
+                                  // Value Cell
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 4.0),
+                                    child: Text(
+                                      '\$${totalExpenses.toStringAsFixed(2)}',
+                                      style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                                        color: UIColor().scarlet,
+                                      ), // Apply color
+                                      textAlign: TextAlign.right,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              // --- Spacer Row (Optional) ---
+                              const TableRow(
+                                children: <Widget>[
+                                  SizedBox(height: 8.0), // Add vertical space before Net Balance
+                                  SizedBox(height: 8.0),
+                                ],
+                              ),
+                              // --- Net Balance Row ---
+                              TableRow(
+                                children: <Widget>[
+                                  // Label Cell
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                      right: 16.0,
+                                      top: 4.0,
+                                      bottom: 4.0,
+                                    ),
+                                    child: Text(
+                                      // Construct the dynamic label text
+                                      'Net Balance (${_filterType == 'Day'
+                                          ? DateFormat('yyyy-MM-dd').format(_selectedDate)
+                                          : _filterType == 'Month'
+                                          ? DateFormat('yyyy-MM').format(_selectedDate)
+                                          : DateFormat('yyyy').format(_selectedDate)}):',
+                                      style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ), // Make Net Balance bold
+                                      textAlign: TextAlign.left,
+                                    ),
+                                  ),
+                                  // Value Cell
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 4.0),
+                                    child: Text(
+                                      '\$${netBalance.toStringAsFixed(2)}',
+                                      style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ), // Make Net Balance bold
+                                      textAlign: TextAlign.right,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
-                          // --- Expenses Row ---
-                          TableRow(
-                            children: <Widget>[
-                              // Label Cell
-                              Padding(
-                                padding: const EdgeInsets.only(right: 16.0, top: 4.0, bottom: 4.0),
-                                child: Text(
-                                  'Total Expenses:',
-                                  style: Theme.of(context).textTheme.displayMedium,
-                                  textAlign: TextAlign.left,
-                                ),
-                              ),
-                              // Value Cell
-                              Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 4.0),
-                                child: Text(
-                                  '\$${totalExpenses.toStringAsFixed(2)}',
-                                  style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                                    color: UIColor().scarlet,
-                                  ), // Apply color
-                                  textAlign: TextAlign.right,
-                                ),
-                              ),
-                            ],
-                          ),
-                          // --- Spacer Row (Optional) ---
-                          const TableRow(
-                            children: <Widget>[
-                              SizedBox(height: 8.0), // Add vertical space before Net Balance
-                              SizedBox(height: 8.0),
-                            ],
-                          ),
-                          // --- Net Balance Row ---
-                          TableRow(
-                            children: <Widget>[
-                              // Label Cell
-                              Padding(
-                                padding: const EdgeInsets.only(right: 16.0, top: 4.0, bottom: 4.0),
-                                child: Text(
-                                  // Construct the dynamic label text
-                                  'Net Balance (${_filterType == 'Day'
-                                      ? DateFormat('yyyy-MM-dd').format(_selectedDate)
-                                      : _filterType == 'Month'
-                                      ? DateFormat('yyyy-MM').format(_selectedDate)
-                                      : DateFormat('yyyy').format(_selectedDate)}):',
-                                  style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ), // Make Net Balance bold
-                                  textAlign: TextAlign.left,
-                                ),
-                              ),
-                              // Value Cell
-                              Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 4.0),
-                                child: Text(
-                                  '\$${netBalance.toStringAsFixed(2)}',
-                                  style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ), // Make Net Balance bold
-                                  textAlign: TextAlign.right,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    ExpensePieChart(categoryAmounts: expenseCategories),
-                    if (dailyBalanceData.isNotEmpty && _filterType != "Day")
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
-                        child: BalanceLineChart(
-                          dailyBalance: dailyBalanceData,
-                          startDate: chartStartDate,
-                          endDate: chartEndDate,
-                          mode: _filterType,
                         ),
-                      ),
-                    if (_fetchedTransactions.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: Text('No transactions added for this period.'),
-                      )
-                    else
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                        child: ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _fetchedTransactions.length,
-                          itemBuilder: (context, index) {
-                            final transactionEntity = _fetchedTransactions[index];
-                            return ExpandableTransactionCard(transaction: transactionEntity);
-                          },
+                        ExpensePieChart(categoryAmounts: expenseCategories),
+                        if (dailyBalanceData.isNotEmpty && _filterType != "Day")
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+                            child: BalanceLineChart(
+                              dailyBalance: dailyBalanceData,
+                              startDate: chartStartDate,
+                              endDate: chartEndDate,
+                              mode: _filterType,
+                            ),
+                          ),
+                        if (_fetchedTransactions.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: Text('No transactions added for this period.'),
+                          )
+                        else
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: _fetchedTransactions.length,
+                              itemBuilder: (context, index) {
+                                final transactionEntity = _fetchedTransactions[index];
+                                return ExpandableTransactionCard(
+                                  transaction: transactionEntity,
+                                  balanceEntity: balanceEntity,
+                                );
+                              },
+                            ),
+                          ),
+                        const SizedBox(height: 16),
+                        Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.max,
+                            children: [
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed:
+                                      () => Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder:
+                                              (context) =>
+                                                  AddTransactionPage(balanceEntity: balanceEntity),
+                                        ),
+                                      ),
+                                  child: Text(
+                                    'Add Transaction',
+                                    style: TextStyle(
+                                      color: UIColor().darkGray,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                  ],
+                      ],
+                    );
+                  },
                 );
               },
-            ),
-            const SizedBox(height: 16),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisSize: MainAxisSize.max,
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed:
-                          () => Navigator.of(context).push(
-                            MaterialPageRoute(builder: (context) => const AddTransactionPage()),
-                          ),
-                      child: Text(
-                        'Add Transaction',
-                        style: TextStyle(
-                          color: UIColor().darkGray,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
             ),
             const SizedBox(height: 16),
           ],

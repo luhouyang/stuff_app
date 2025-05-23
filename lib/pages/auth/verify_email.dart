@@ -77,6 +77,8 @@ class VerifyEmailPage extends StatelessWidget {
                             weight: 40,
                             height: 1.65,
                             targetCalories: 2000.0,
+                            storageAllowance: 209715200.0,
+                            storageUsed: 0.0,
                           ),
                         );
 

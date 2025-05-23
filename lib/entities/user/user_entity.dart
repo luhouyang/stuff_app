@@ -4,7 +4,9 @@ enum UserEnum {
   bio("bio"),
   weight("weight"),
   height("height"),
-  targetCalories("targetCalories");
+  targetCalories("targetCalories"),
+  storageAllowance("storageAllowance"),
+  storageUsed("storageUsed");
 
   final String value;
   const UserEnum(this.value);
@@ -17,6 +19,8 @@ class UserEntity {
   double weight;
   double height;
   double targetCalories;
+  double storageAllowance;
+  double storageUsed;
 
   UserEntity({
     required this.id,
@@ -25,6 +29,8 @@ class UserEntity {
     required this.weight,
     required this.height,
     required this.targetCalories,
+    required this.storageAllowance,
+    required this.storageUsed,
   });
 
   factory UserEntity.fromMap(Map<String, dynamic> map) {
@@ -35,6 +41,8 @@ class UserEntity {
       weight: map[UserEnum.weight.value].toDouble(),
       height: map[UserEnum.height.value].toDouble(),
       targetCalories: map[UserEnum.targetCalories.value].toDouble(),
+      storageAllowance: map[UserEnum.storageAllowance.value].toDouble(),
+      storageUsed: map[UserEnum.storageUsed.value].toDouble(),
     );
   }
 
@@ -46,6 +54,8 @@ class UserEntity {
       UserEnum.weight.value: weight,
       UserEnum.height.value: height,
       UserEnum.targetCalories.value: targetCalories,
+      UserEnum.storageAllowance.value: storageAllowance,
+      UserEnum.storageUsed.value: storageUsed,
     };
   }
 }

@@ -81,6 +81,25 @@ class TextInputs {
     );
   }
 
+  Widget inputNumberWidget({
+    required String hint,
+    required Function validator,
+    required TextEditingController controller,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
+      child: TextFormField(
+        cursorColor: UIColor().darkGray,
+        autovalidateMode: AutovalidateMode.onUnfocus,
+        validator: (value) => validator(value),
+        controller: controller,
+        style: TextStyle(color: UIColor().darkGray),
+        decoration: InputDecoration(hintText: hint),
+        keyboardType: TextInputType.number,
+      ),
+    );
+  }
+
   Widget obscureInputTextWidget({
     required String hint,
     required Function validator,

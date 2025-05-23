@@ -9,6 +9,8 @@ class UserState extends ChangeNotifier {
     weight: 50.0,
     height: 1.65,
     targetCalories: 2000.0,
+    storageAllowance: 209715200.0,
+    storageUsed: 0.0,
   );
 
   void setUserEntity({required UserEntity newUserEntity}) {
@@ -24,6 +26,8 @@ class UserState extends ChangeNotifier {
       weight: 50.0,
       height: 1.65,
       targetCalories: 2000.0,
+      storageAllowance: 209715200.0,
+      storageUsed: 0.0,
     );
     notifyListeners();
   }

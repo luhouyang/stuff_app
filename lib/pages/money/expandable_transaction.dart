@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:stuff_app/entities/finance/balance_entity.dart';
 import 'package:stuff_app/entities/finance/transaction_entity.dart'; // NEW IMPORT
 import 'package:stuff_app/services/fbstore/fb_store.dart';
 import 'package:stuff_app/widgets/texts/snack_bar_text.dart';
@@ -8,8 +9,13 @@ import 'package:stuff_app/widgets/ui_color.dart';
 
 class ExpandableTransactionCard extends StatefulWidget {
   final TransactionEntity transaction;
+  final BalanceEntity balanceEntity;
 
-  const ExpandableTransactionCard({super.key, required this.transaction});
+  const ExpandableTransactionCard({
+    super.key,
+    required this.transaction,
+    required this.balanceEntity,
+  });
 
   @override
   State<ExpandableTransactionCard> createState() => _ExpandableTransactionCardState();
@@ -118,7 +124,12 @@ class _ExpandableTransactionCardState extends State<ExpandableTransactionCard> {
                           if (confirmDelete) {
                             final userId = FirebaseAuth.instance.currentUser?.uid;
                             if (userId != null && context.mounted) {
-                              await FBStore().deleteTransaction(context, userId, transactionId);
+                              await FBStore().deleteTransaction(
+                                context,
+                                userId,
+                                transactionId,
+                                widget.balanceEntity,
+                              );
                             } else {
                               debugPrint('User not logged in, cannot delete transaction.');
                               if (context.mounted) {

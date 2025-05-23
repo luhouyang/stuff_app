@@ -3,8 +3,11 @@ import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:stuff_app/entities/finance/balance_entity.dart';
 import 'package:stuff_app/entities/finance/transaction_entity.dart'; // NEW IMPORT
 import 'package:stuff_app/services/fbstore/fb_store.dart';
+import 'package:stuff_app/states/user_state.dart';
 import 'package:stuff_app/widgets/fields/text_input.dart';
 import 'package:stuff_app/widgets/loading/loading_widget.dart';
 import 'package:stuff_app/widgets/texts/h1_text.dart';
@@ -12,7 +15,9 @@ import 'package:stuff_app/widgets/texts/snack_bar_text.dart';
 import 'package:stuff_app/widgets/ui_color.dart';
 
 class AddTransactionPage extends StatefulWidget {
-  const AddTransactionPage({super.key});
+  final BalanceEntity balanceEntity;
+
+  const AddTransactionPage({super.key, required this.balanceEntity});
 
   @override
   State<AddTransactionPage> createState() => _AddTransactionPageState();
@@ -146,7 +151,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
               children: [
                 const H1Text(text: "New Transaction"),
                 const SizedBox(height: 16),
-                textInputs.inputTextWidget(
+                textInputs.inputNumberWidget(
                   hint: 'Amount (e.g., 50.00)',
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -238,7 +243,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                 ),
                 const SizedBox(height: 16),
                 textInputs.inputTextWidget(
-                  hint: 'Description (optional)',
+                  hint: 'Description',
                   validator: textInputs.textVerify,
                   controller: descriptionController,
                 ),
@@ -276,7 +281,12 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                           day: _selectedDate.day,
                         );
 
-                        await FBStore().addTransaction(context, newTransaction, userId);
+                        await FBStore().addTransaction(
+                          context,
+                          newTransaction,
+                          widget.balanceEntity,
+                          userId,
+                        );
 
                         if (context.mounted) {
                           Navigator.of(context).pop(); // Dismiss loading dialog

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:stuff_app/entities/user/user_entity.dart';
@@ -47,6 +49,8 @@ class _SmallProfilePageState extends State<SmallProfilePage> {
         height: double.tryParse(_heightController.text) ?? userState.userEntity.height,
         targetCalories:
             double.tryParse(_targetCaloriesController.text) ?? userState.userEntity.targetCalories,
+        storageAllowance: userState.userEntity.storageAllowance,
+        storageUsed: userState.userEntity.storageUsed,
       );
 
       userState.setUserEntity(newUserEntity: updatedUser);
@@ -88,8 +92,8 @@ class _SmallProfilePageState extends State<SmallProfilePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 8),
-                  ImageService(parentContext: context, imageData: imageData),
+                  // const SizedBox(height: 8),
+                  // ImageService(parentContext: context, imageData: imageData),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _nameController,
@@ -184,6 +188,21 @@ class _SmallProfilePageState extends State<SmallProfilePage> {
                       ),
                     ],
                   ),
+                  // const SizedBox(height: 32),
+                  // Text(
+                  //   "Storage Allowance | ${userState.userEntity.storageUsed / userState.userEntity.storageAllowance}% of ${userState.userEntity.storageAllowance / 1024.0 / 1024.0} MB",
+                  //   style: TextStyle(fontWeight: FontWeight.bold),
+                  // ),
+                  // const SizedBox(height: 8),
+                  // LinearProgressIndicator(
+                  //   value: min(
+                  //     userState.userEntity.storageUsed / userState.userEntity.storageAllowance,
+                  //     1.0,
+                  //   ),
+                  //   minHeight: 8,
+                  //   backgroundColor: Colors.grey[200],
+                  //   valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor),
+                  // ),
                   const SizedBox(height: 16),
                   SmallLoginPage(), // Added the login page here
                 ],
